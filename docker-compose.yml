@@ -1,6 +1,7 @@
 version: "3"
 
-x-base-app-conf: &base_app_conf # env_file: .env
+x-base-app-conf: &base_app_conf
+  env_file: .env
   stdin_open: true
   tty: true
 
@@ -21,8 +22,9 @@ services:
       - db
       - elasticsearch
       - django-migrations
+      - redis  
 
-  # Apply Django migrations
+ # Apply Django migrations
   django-migrations:
     <<: *base_app_conf
     image: django_app:latest
@@ -63,6 +65,28 @@ services:
       - 9200:9200
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
+
+  redis:
+    image: "redis:alpine"
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+  celery:
+    <<: *base_app_conf
+    image: django_app:latest
+    container_name: celery
+    command: celery -A sis_exercise worker --loglevel=info  
+    restart: always
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    volumes:
+      - "./app:/app"
+    depends_on:
+      - db
+      - redis
 
 volumes:
   elasticsearch_data:
