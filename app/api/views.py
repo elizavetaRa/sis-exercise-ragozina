@@ -44,10 +44,21 @@ class LiteratureSearchViewSet(ViewSet):
 
     def list(self, request):
         search_query = request.query_params.get("q", "")
+
+        offset = int(request.query_params.get("offset", 0))  # Default offset
+        limit = int(request.query_params.get("limit", 10))   # Default limit
+
         search = LiteratureDocument.search().query(
         "multi_match", query=search_query, fields=["title", "abstract"]
         )
-        results = search.execute()
+
+        # Apply pagination
+        search = search[offset: offset + limit]
+
+
+        results = search.execute()        
+        for result in results:
+            print(f"Publication Date: {result.publication_date}")
         prompt = "Assume that you are a literature expert. I will give you few points to write related literature summary upon. This summary should be around 300 words. These points are: "
         prompt += " ".join([f"Title: {result.title}, Abstract: {result.abstract}" for result in results])
         # summary = client.chat.completions.create(
@@ -57,12 +68,19 @@ class LiteratureSearchViewSet(ViewSet):
         # )
         response = "Duis aliquet Congue scelerisque risus elementum pulvinar. Scelerisque Ad cum, nisl pretium ullamcorper eget pretium. Elementum phasellus quam viverra adipiscing arcu quisque nonummy imperdiet pretium molestie ligula. Tempor massa tincidunt nisi. Aliquam potenti cum mi parturient ullamcorper sollicitudin semper ultrices hac sem ultrices sociosqu dis dapibus blandit ad dictum laoreet neque, mi, etiam Nisl sapien Sociis fringilla porta malesuada, duis, feugiat auctor condimentum venenatis platea convallis non vestibulum at. Congue mollis luctus lectus faucibus libero mi blandit elementum potenti placerat tempor ante justo viverra montes. Per luctus turpis nostra, ut, placerat et. Ipsum tellus fusce, magna class ante. Senectus nam malesuada mollis fames sociosqu. Taciti per nonummy pede faucibus enim ligula ullamcorper, luctus odio sed Hymenaeos primis. Tortor orci varius torquent nibh, phasellus sollicitudin nisi cubilia rhoncus eu. Tristique condimentum inceptos.Fermentum feugiat inceptos congue sollicitudin arcu nunc nam class, torquent primis montes proin nibh, nam nostra urna. Nonummy pulvinar. Sociosqu aenean fames. Dolor ipsum. Lobortis justo senectus metus sociis mauris. Morbi feugiat porttitor porta hendrerit aliquam lacus. Euismod convallis dignissim cubilia arcu faucibus placerat imperdiet Tempus. Consequat laoreet hymenaeos conubia suscipit rhoncus velit platea dis. Nec velit euismod tempor, vivamus augue sed massa nisl gravida integer tellus amet lacus volutpat euismod tincidunt. Orci lobortis quam. Egestas conubia netus." #summary.choices[0].message.content
         serializer = LiteratureSerializer(results, many=True)
+
+        # Get the total count of results before pagination
+        total_count = results.hits.total.value
+
         count = results.hits.total.value
         return Response(
             {
                 "search_query": search_query,
                 "summary": response,
                 "data": serializer.data,
-                "count": count,
-            }
+                "count": total_count,
+                "offset": offset,
+                "limit": limit,
+            },
+            status=status.HTTP_200_OK
         )
