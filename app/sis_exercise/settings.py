@@ -148,3 +148,6 @@ ELASTICSEARCH_DSL = {
         "hosts": ["http://elasticsearch:9200"],
     },
 }
+
+# Setup redis as a message broker for celery
+CELERY_BROKER_URL = 'redis://redis:6379/0'
