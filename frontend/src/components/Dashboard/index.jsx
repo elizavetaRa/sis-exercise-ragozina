@@ -1,44 +1,23 @@
 import React, { useState } from "react";
-import { Input, Layout, Card, Alert, Pagination, Button } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
-import { DownCircleOutlined, UpCircleOutlined } from '@ant-design/icons';
-import { Spin } from 'antd';
+import { Spin, Input, Layout, Card, Alert, Pagination, Button, Avatar } from 'antd';
+import { LoadingOutlined, DownCircleOutlined, UpCircleOutlined } from '@ant-design/icons';
+import {
+  headerStyle,
+  contentStyle,
+  footerStyle,
+  layoutStyle,
+  searchStyle,
+  cardMetaStyle,
+  paginationStyle,
+  avatarStyle,
+  cardStyle,
+  cardsContainerStyle,
+  loadingSpinnerStyle,
+  errorAlertStyle
+} from './styles';
 
 const { Header, Footer, Content } = Layout;
 const { Search } = Input;
-
-const headerStyle = {
-  textAlign: 'center',
-  color: '#fff',
-  height: 64,
-  paddingInline: 48,
-  lineHeight: '64px',
-  backgroundColor: '#001529',
-  fontSize: 24,
-};
-
-const contentStyle = {
-  display: 'flex',
-
-  alignItems: 'center',
-  flexDirection: 'column',
-  minHeight: '80vh',
-  padding: '24px',
-  textAlign: 'center',
-};
-
-const footerStyle = {
-  textAlign: 'center',
-  color: '#fff',
-  backgroundColor: '#001529',
-  padding: '12px 0',
-};
-
-const layoutStyle = {
-  overflow: 'hidden',
-  width: '100%',
-  minHeight: '100vh',
-};
 
 function Dashboard() {
   const [data, setData] = useState(null);
@@ -49,6 +28,7 @@ function Dashboard() {
   const [expandedAbstracts, setExpandedAbstracts] = useState({});
   const [position, setPosition] = useState('start');
   const pageSize = 10; // Number of results per page
+  const abstractDefaultLength = 50; // Number of words to show initially for the abstracts
 
   const onSearch = async (value) => {
     setData(null);
@@ -102,7 +82,6 @@ function Dashboard() {
     }));
   };
 
-  const abstractDefaultLength = 50
   // Helper function to get the first 50 words
   const getFirstNWords = (text) => {
     return text.split(" ").slice(0, abstractDefaultLength).join(" ");
@@ -120,25 +99,29 @@ function Dashboard() {
           allowClear
           onSearch={onSearch}
           enterButton
-          style={{ maxWidth: 900, width: '100%', marginBottom: 24 }}
+          style={searchStyle}
         />
         {isLoading && (
           <Spin
             indicator={
-              <LoadingOutlined style={{ fontSize: 48 }} spin />
+              <LoadingOutlined style={loadingSpinnerStyle} spin />
             }
           />
         )}
         {error && (
-          <Alert message="Error" description={error} type="error" showIcon style={{ marginBottom: 24 }} />
+          <Alert message="Error" description={error} type="error" showIcon style={errorAlertStyle} />
         )}
         {data && (
-          <div>
+          <div style={cardsContainerStyle}>
             <Card
-              title="OpenAI Summary"
               bordered={false}
-              style={{ maxWidth: 900, marginBottom: 24 }}
+              style={cardStyle}
             >
+              <Card.Meta
+                avatar={<Avatar style={avatarStyle} src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/ChatGPT-Logo.svg/180px-ChatGPT-Logo.svg.png" />}
+                title="OpenAI Summary"
+                style={cardMetaStyle}
+              />
               {data.summary}
             </Card>
 
@@ -150,11 +133,7 @@ function Dashboard() {
                 pageSize={pageSize}
                 total={totalCount}
                 onChange={handlePageChange}
-                style={{
-                  marginTop: 16, marginBottom: 16, display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
+                style={paginationStyle}
               />
             )}
             {data.data.map((item, index) => (
@@ -162,7 +141,7 @@ function Dashboard() {
                 title={item.title}
                 bordered={false}
                 key={index}
-                style={{ maxWidth: 900, width: "100%", marginBottom: 16 }}
+                style={cardStyle}
               >
                 {new Date(item.publication_date).toLocaleDateString("en-US", {
                   year: "numeric",
@@ -170,7 +149,7 @@ function Dashboard() {
                   day: "numeric",
                 })}
 
-                {/* Only show possibility to extend abstract if its's longer than set amount of words */}
+                {/* Only show possibility to extend abstract if it's longer than set amount of words */}
                 <p>
                   {item.abstract.split(' ').length > abstractDefaultLength
                     ? (expandedAbstracts[index] ? item.abstract : `${getFirstNWords(item.abstract)}...`)
@@ -184,8 +163,9 @@ function Dashboard() {
                     onClick={() => toggleAbstract(index)}
                   >
                     {expandedAbstracts[index] ? "Show less" : "Show full abstract"}
-                  </Button>)}
-            </Card>
+                  </Button>
+                )}
+              </Card>
             ))}
             {totalCount > pageSize && ( // Show pagination if total results are more than page size
               <Pagination
@@ -193,11 +173,7 @@ function Dashboard() {
                 pageSize={pageSize}
                 total={totalCount}
                 onChange={handlePageChange}
-                style={{
-                  marginTop: 16, marginBottom: 16, display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
+                style={paginationStyle}
               />
             )}
           </div>
