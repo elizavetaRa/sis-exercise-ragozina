@@ -116,7 +116,7 @@ function Dashboard() {
           />
         )}
         {error && (
-          <Alert message="Error" description={error} type="error" showIcon style={errorAlertStyle} />
+          <Alert message="Error" id="fetch-error" description={error} type="error" showIcon style={errorAlertStyle} />
         )}
         {data && (
           <div style={cardsContainerStyle}>
@@ -128,12 +128,13 @@ function Dashboard() {
                 avatar={<Avatar style={avatarStyle} src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/ChatGPT-Logo.svg/180px-ChatGPT-Logo.svg.png" />}
                 title="OpenAI Summary"
                 style={cardMetaStyle}
+                
               />
               {data.summary[1][1][0][3][1][0][1]}
             </Card>)}
 
             {data && data.count !== undefined && (
-              <h3>
+              <h3 id="fetch-results-count">
                 {data.count} Result{data.count !== 1 ? 's' : ''} Found
               </h3>
             )}
