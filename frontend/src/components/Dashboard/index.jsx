@@ -31,11 +31,7 @@ function Dashboard() {
   const abstractDefaultLength = 50; // Number of words to show initially for the abstracts
 
   const onSearch = async (value) => {
-    setData(null);
-    setError(null);
-    setIsLoading(true);
-    setCurrentPage(1); // Reset to the first page on new search
-
+    onSearchClear() // clear search related data
     try {
       const response = await fetch(
         `${process.env.REACT_APP_BACKEND_URL}/api/search?q=${value}&offset=0&limit=${pageSize}`
@@ -51,6 +47,15 @@ function Dashboard() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Handle search clear event
+  const onSearchClear = () => {
+    setData(null);
+    setError(null);
+    setCurrentPage(1);
+    setTotalCount(0);
+    setExpandedAbstracts({});
   };
 
   const handlePageChange = async (page) => {
@@ -100,6 +105,7 @@ function Dashboard() {
           onSearch={onSearch}
           enterButton
           style={searchStyle}
+          onClear={onSearchClear}
         />
         {isLoading && (
           <Spin
@@ -113,7 +119,7 @@ function Dashboard() {
         )}
         {data && (
           <div style={cardsContainerStyle}>
-            <Card
+            {data.summary && (<Card
               bordered={false}
               style={cardStyle}
             >
@@ -123,9 +129,13 @@ function Dashboard() {
                 style={cardMetaStyle}
               />
               {data.summary}
-            </Card>
+            </Card>)}
 
-            <h3>{data.count} Result{data.count !== 1 ? 's' : ''} Found</h3>
+            {data && data.count !== undefined && (
+              <h3>
+                {data.count} Result{data.count !== 1 ? 's' : ''} Found
+              </h3>
+            )}
 
             {totalCount > pageSize && ( // Show pagination if total results are more than page size
               <Pagination
