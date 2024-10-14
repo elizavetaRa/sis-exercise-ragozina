@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Input, Layout, Card, Alert, Pagination } from 'antd';
+import { Input, Layout, Card, Alert, Pagination, Button } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
+import { DownCircleOutlined, UpCircleOutlined } from '@ant-design/icons';
 import { Spin } from 'antd';
 
 const { Header, Footer, Content } = Layout;
@@ -45,6 +46,8 @@ function Dashboard() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [expandedAbstracts, setExpandedAbstracts] = useState({});
+  const [position, setPosition] = useState('start');
   const pageSize = 10; // Number of results per page
 
   const onSearch = async (value) => {
@@ -90,6 +93,19 @@ function Dashboard() {
       setIsLoading(false);
     }
   };
+
+    // Toggle abstract visibility
+    const toggleAbstract = (index) => {
+      setExpandedAbstracts((prev) => ({
+        ...prev,
+        [index]: !prev[index],
+      }));
+    };
+  
+    // Helper function to get the first 50 words
+    const getFirst30Words = (text) => {
+      return text.split(" ").slice(0, 50).join(" ");
+    };
 
   return (
     <Layout style={layoutStyle}>
@@ -139,18 +155,23 @@ function Dashboard() {
             )}
             {data.data.map((item, index) => (
               <Card
-                title={item.title}
-                bordered={false}
-                key={index}
-                style={{ maxWidth: 900, marginBottom: 16 }}
-              >
-                {new Date(item.publication_date).toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-                <p>{item.abstract}</p>
-              </Card>
+              title={item.title}
+              bordered={false}
+              key={index}
+              style={{ maxWidth: 900, width: "100%", marginBottom: 16 }}
+            >
+              {new Date(item.publication_date).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+              <p>
+                {expandedAbstracts[index] ? item.abstract : `${getFirst30Words(item.abstract)}...`}
+              </p>
+              <Button icon={expandedAbstracts[index] ? <UpCircleOutlined /> : <DownCircleOutlined />} iconPosition={position} onClick={() => toggleAbstract(index)}>
+              {expandedAbstracts[index] ? "Show less" : "Show full abstract"}
+          </Button>
+            </Card>
             ))}
             {totalCount > pageSize && ( // Show pagination if total results are more than page size
               <Pagination
