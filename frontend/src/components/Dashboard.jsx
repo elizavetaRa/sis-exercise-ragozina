@@ -94,23 +94,24 @@ function Dashboard() {
     }
   };
 
-    // Toggle abstract visibility
-    const toggleAbstract = (index) => {
-      setExpandedAbstracts((prev) => ({
-        ...prev,
-        [index]: !prev[index],
-      }));
-    };
-  
-    // Helper function to get the first 50 words
-    const getFirst30Words = (text) => {
-      return text.split(" ").slice(0, 50).join(" ");
-    };
+  // Toggle abstract visibility
+  const toggleAbstract = (index) => {
+    setExpandedAbstracts((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
+  const abstractDefaultLength = 50
+  // Helper function to get the first 50 words
+  const getFirstNWords = (text) => {
+    return text.split(" ").slice(0, abstractDefaultLength).join(" ");
+  };
 
   return (
     <Layout style={layoutStyle}>
       <Header style={headerStyle}>Literature Sources Search & Summary</Header>
-      
+
       <Content style={contentStyle}>
         <Search
           id="search-input"
@@ -149,41 +150,55 @@ function Dashboard() {
                 pageSize={pageSize}
                 total={totalCount}
                 onChange={handlePageChange}
-                style={{ marginTop: 16, marginBottom: 16,     display: 'flex',
+                style={{
+                  marginTop: 16, marginBottom: 16, display: 'flex',
                   justifyContent: 'center',
-                  alignItems: 'center', }}
+                  alignItems: 'center',
+                }}
               />
             )}
             {data.data.map((item, index) => (
               <Card
-              title={item.title}
-              bordered={false}
-              key={index}
-              style={{ maxWidth: 900, width: "100%", marginBottom: 16 }}
-            >
-              {new Date(item.publication_date).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-              <p>
-                {expandedAbstracts[index] ? item.abstract : `${getFirst30Words(item.abstract)}...`}
-              </p>
-              <Button icon={expandedAbstracts[index] ? <UpCircleOutlined /> : <DownCircleOutlined />} iconPosition={position} onClick={() => toggleAbstract(index)}>
-              {expandedAbstracts[index] ? "Show less" : "Show full abstract"}
-          </Button>
+                title={item.title}
+                bordered={false}
+                key={index}
+                style={{ maxWidth: 900, width: "100%", marginBottom: 16 }}
+              >
+                {new Date(item.publication_date).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+
+                {/* Only show possibility to extend abstract if its's longer than set amount of words */}
+                <p>
+                  {item.abstract.split(' ').length > abstractDefaultLength
+                    ? (expandedAbstracts[index] ? item.abstract : `${getFirstNWords(item.abstract)}...`)
+                    : item.abstract}
+                </p>
+
+                {item.abstract.split(' ').length > abstractDefaultLength && (
+                  <Button
+                    icon={expandedAbstracts[index] ? <UpCircleOutlined /> : <DownCircleOutlined />}
+                    iconPosition={position}
+                    onClick={() => toggleAbstract(index)}
+                  >
+                    {expandedAbstracts[index] ? "Show less" : "Show full abstract"}
+                  </Button>)}
             </Card>
             ))}
             {totalCount > pageSize && ( // Show pagination if total results are more than page size
               <Pagination
-              current={currentPage}
-              pageSize={pageSize}
-              total={totalCount}
-              onChange={handlePageChange}
-              style={{ marginTop: 16, marginBottom: 16,     display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center', }}
-            />
+                current={currentPage}
+                pageSize={pageSize}
+                total={totalCount}
+                onChange={handlePageChange}
+                style={{
+                  marginTop: 16, marginBottom: 16, display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              />
             )}
           </div>
         )}
