@@ -92,7 +92,7 @@ function Dashboard() {
 
   return (
     <Layout style={layoutStyle}>
-      <Header style={headerStyle}>Literature Sources Search & Summary</Header>
+      <Header style={headerStyle}>INSPIREHEP Search & Summarization</Header>
 
       <Content style={contentStyle}>
         <Search
