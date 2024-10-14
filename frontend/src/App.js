@@ -6,10 +6,10 @@ import 'antd/dist/reset.css'; // Make sure you have Ant Design styles
 function App() {
   return (
 
-      <div className="App">
+    <div className="App">
         <Dashboard />
-      </div>
-  
+    </div>
+
   );
 }
 

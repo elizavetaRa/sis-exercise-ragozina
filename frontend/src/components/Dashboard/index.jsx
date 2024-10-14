@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Spin, Input, Layout, Card, Alert, Pagination, Button, Avatar } from 'antd';
 import { LoadingOutlined, DownCircleOutlined, UpCircleOutlined } from '@ant-design/icons';
+
 import {
   headerStyle,
   contentStyle,
@@ -19,33 +20,43 @@ import {
 const { Header, Footer, Content } = Layout;
 const { Search } = Input;
 
+const PAGE_SIZE = 10; // Number of results per page
+const ABSTRACT_DEFAULT_LENGTH = 50; // Number of words to show initially for the abstracts
+const ICON_POSITION = 'start'
+
 function Dashboard() {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
   const [expandedAbstracts, setExpandedAbstracts] = useState({});
-  const [position, setPosition] = useState('start');
-  const pageSize = 10; // Number of results per page
-  const abstractDefaultLength = 50; // Number of words to show initially for the abstracts
 
-  const onSearch = async (value) => {
-    onSearchClear() // clear search related data
+  const makeSearchRequest = async (searchValue, offset) => {
+    setIsLoading(true);
+
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/search?q=${value}&offset=0&limit=${pageSize}`
+          `${process.env.REACT_APP_BACKEND_URL}/api/search?q=${searchValue}&offset=${offset}&limit=${PAGE_SIZE}`
       );
+
       if (!response.ok) {
         throw new Error("Network response was not ok");
       }
+
       const result = await response.json();
       setData(result);
-      setTotalCount(result.count); // Set total count from response
     } catch (error) {
       setError("Failed to fetch data");
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  const onSearch = async (value) => {
+    if (value) {
+      onSearchClear() // clear search related data
+
+      await makeSearchRequest(value, 0)
     }
   };
 
@@ -54,29 +65,14 @@ function Dashboard() {
     setData(null);
     setError(null);
     setCurrentPage(1);
-    setTotalCount(0);
     setExpandedAbstracts({});
   };
 
   const handlePageChange = async (page) => {
-    setIsLoading(true);
     setCurrentPage(page);
 
-    const offset = (page - 1) * pageSize; // Calculate offset based on page
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/search?q=${data.search_query}&offset=${offset}&limit=${pageSize}`
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const result = await response.json();
-      setData(result);
-    } catch (error) {
-      setError("Failed to fetch data");
-    } finally {
-      setIsLoading(false);
-    }
+    const offset = (page - 1) * PAGE_SIZE; // Calculate offset based on page
+    makeSearchRequest(data.search_query, offset)
   };
 
   // Toggle abstract visibility
@@ -89,8 +85,10 @@ function Dashboard() {
 
   // Helper function to get the first 50 words
   const getFirstNWords = (text) => {
-    return text.split(" ").slice(0, abstractDefaultLength).join(" ");
+    return text.split(" ").slice(0, ABSTRACT_DEFAULT_LENGTH).join(" ");
   };
+
+  const totalCount = data?.count
 
   return (
     <Layout style={layoutStyle}>
@@ -128,7 +126,7 @@ function Dashboard() {
                 title="OpenAI Summary"
                 style={cardMetaStyle}
               />
-              {data.summary}
+              {data.summary[1][1][0][3][1][0][1]}
             </Card>)}
 
             {data && data.count !== undefined && (
@@ -137,10 +135,10 @@ function Dashboard() {
               </h3>
             )}
 
-            {totalCount > pageSize && ( // Show pagination if total results are more than page size
+            {!!totalCount && (totalCount > PAGE_SIZE) && ( // Show pagination if total results are more than page size
               <Pagination
                 current={currentPage}
-                pageSize={pageSize}
+                pageSizeOptions={[PAGE_SIZE]}
                 total={totalCount}
                 onChange={handlePageChange}
                 style={paginationStyle}
@@ -160,16 +158,15 @@ function Dashboard() {
                 })}
 
                 {/* Only show possibility to extend abstract if it's longer than set amount of words */}
-                <p>
-                  {item.abstract.split(' ').length > abstractDefaultLength
-                    ? (expandedAbstracts[index] ? item.abstract : `${getFirstNWords(item.abstract)}...`)
-                    : item.abstract}
-                </p>
-
-                {item.abstract.split(' ').length > abstractDefaultLength && (
+                  <p>
+                    {item.abstract.split(' ').length > ABSTRACT_DEFAULT_LENGTH
+                      ? (expandedAbstracts[index] ? item.abstract : `${getFirstNWords(item.abstract)}...`)
+                      : item.abstract}
+                  </p>
+                {item.abstract.split(' ').length > ABSTRACT_DEFAULT_LENGTH && (
                   <Button
                     icon={expandedAbstracts[index] ? <UpCircleOutlined /> : <DownCircleOutlined />}
-                    iconPosition={position}
+                    iconPosition={ICON_POSITION}
                     onClick={() => toggleAbstract(index)}
                   >
                     {expandedAbstracts[index] ? "Show less" : "Show full abstract"}
@@ -177,10 +174,10 @@ function Dashboard() {
                 )}
               </Card>
             ))}
-            {totalCount > pageSize && ( // Show pagination if total results are more than page size
+            {!!totalCount && (totalCount > PAGE_SIZE) && ( // Show pagination if total results are more than page size
               <Pagination
                 current={currentPage}
-                pageSize={pageSize}
+                pageSizeOptions={[PAGE_SIZE]}
                 total={totalCount}
                 onChange={handlePageChange}
                 style={paginationStyle}
