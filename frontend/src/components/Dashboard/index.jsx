@@ -104,12 +104,14 @@ function Dashboard() {
           enterButton
           style={searchStyle}
           onClear={onSearchClear}
+          aria-label="Search for articles, papers, or keywords"
         />
         {isLoading && (
           <Spin
             indicator={
               <LoadingOutlined style={loadingSpinnerStyle} spin />
             }
+            aria-live="polite" // Announce loading status
           />
         )}
         {error && (
@@ -142,6 +144,7 @@ function Dashboard() {
                 total={totalCount}
                 onChange={handlePageChange}
                 style={paginationStyle}
+                aria-label="Pagination controls"
               />
             )}
             {data.data.map((item, index) => (
@@ -168,6 +171,7 @@ function Dashboard() {
                     icon={expandedAbstracts[index] ? <UpCircleOutlined /> : <DownCircleOutlined />}
                     iconPosition={ICON_POSITION}
                     onClick={() => toggleAbstract(index)}
+                    aria-expanded={expandedAbstracts[index]}
                   >
                     {expandedAbstracts[index] ? "Show less" : "Show full abstract"}
                   </Button>
@@ -181,6 +185,7 @@ function Dashboard() {
                 total={totalCount}
                 onChange={handlePageChange}
                 style={paginationStyle}
+                aria-label="Pagination controls"
               />
             )}
           </div>
