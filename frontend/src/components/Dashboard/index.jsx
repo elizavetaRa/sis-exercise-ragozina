@@ -46,7 +46,8 @@ function Dashboard() {
       const result = await response.json();
       setData(result);
     } catch (error) {
-      setError("Failed to fetch data");
+      
+      error.message? setError(error.message): setError("Failed to fetch data. Try again.")
     } finally {
       setIsLoading(false);
     }
