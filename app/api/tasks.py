@@ -16,7 +16,7 @@ def harvest_literature():
     if papers:
         for paper in papers:
             metadata = extract_metadata(paper)
-            publication_date = parse_publication_date(metadata.get("publication_info", [{}])[0].get("year"))
+            publication_date = parse_publication_date(metadata.get("year"))
             save_literature(metadata, publication_date)
 
 def fetch_literature():
@@ -31,17 +31,32 @@ def fetch_literature():
 def extract_metadata(paper):
     """Extract relevant metadata from a paper."""
     metadata = paper.get("metadata", {})
+
+    # Extract publication year
+    publication_info = metadata.get("publication_info", [])
+    year = publication_info[0].get("year") if publication_info else None # Safely access year
+
     return {
         "title": metadata.get("titles", [{}])[0].get("title", ""),
         "abstract": metadata.get("abstracts", [{}])[0].get("value", ""),
         "arxiv_id": metadata.get("arxiv_eprint", None),
+        "year": year
     }
 
 def parse_publication_date(publication_year):
     """Parse the publication year into a date object."""
+
+   
+
     if publication_year:
+         
+        # Original date string: contsraint: it requires month and day but only year is provided
+        dt_string = str("01/01/" + str(publication_year))
+
+        # Convert to datetime object
+        dt_object = datetime.strptime(dt_string, "%d/%m/%Y")
         try:
-            return datetime.strptime(str(publication_year), "%Y").date()
+            return dt_object.strftime("%Y-%m-%d")
         except ValueError:
             return None
     return None
