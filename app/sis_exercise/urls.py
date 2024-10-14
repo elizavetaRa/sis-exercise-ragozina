@@ -18,11 +18,12 @@ from django.urls import include
 from django.urls import path
 
 from rest_framework.routers import DefaultRouter
-from api.views import LiteratureDocumentViewSet
+from api.views import LiteratureDocumentViewSet,LiteratureSearchViewSet
 from sis_exercise.views import IndexRedirectView
 
 router = DefaultRouter()
 router.register('api/literature/search', LiteratureDocumentViewSet, basename='api-literature-search',)
+router.register(r'api/search', LiteratureSearchViewSet, basename='api-search',)
 
 urlpatterns = [
     path("admin/", admin.site.urls),

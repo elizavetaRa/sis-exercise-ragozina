@@ -7,7 +7,7 @@ class LiteratureSerializer(serializers.Serializer):
 
     title = serializers.CharField()
     abstract = serializers.CharField()
-    publication_date = serializers.DateField(read_only=True)
+    publication_date = serializers.DateTimeField(read_only=True, format="%Y-%m-%d")
 
     class Meta:
         fields = (

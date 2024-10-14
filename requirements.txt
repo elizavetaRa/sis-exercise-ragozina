@@ -11,6 +11,8 @@ celery
 python-dotenv
 redis==5.0.1
 requests
+openai==1.51.1
+django-cors-headers==4.4.0
 # Local development
 ipython
 ipdb
