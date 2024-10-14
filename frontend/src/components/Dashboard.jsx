@@ -19,7 +19,7 @@ const headerStyle = {
 
 const contentStyle = {
   display: 'flex',
-  justifyContent: 'center',
+
   alignItems: 'center',
   flexDirection: 'column',
   minHeight: '80vh',
@@ -110,11 +110,12 @@ function Dashboard() {
   return (
     <Layout style={layoutStyle}>
       <Header style={headerStyle}>Literature Sources Search & Summary</Header>
+      
       <Content style={contentStyle}>
         <Search
           id="search-input"
           size="large"
-          placeholder="input search text"
+          placeholder="Search articles, papers, or keywords..."
           allowClear
           onSearch={onSearch}
           enterButton
@@ -140,7 +141,7 @@ function Dashboard() {
               {data.summary}
             </Card>
 
-            <h3>Results</h3>
+            <h3>{data.count} Result{data.count !== 1 ? 's' : ''} Found</h3>
 
             {totalCount > pageSize && ( // Show pagination if total results are more than page size
               <Pagination
