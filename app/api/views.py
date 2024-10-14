@@ -138,9 +138,11 @@ class LiteratureSearchViewSet(ViewSet):
             return results  # Return the error response if search failed
 
         # Generate OpenAI summary
-        response = self.generate_openai_summary(results)
-        if isinstance(response, Response):
-            return response  # Return the error response if summary generation failed
+        response = None
+        if results and len(results.hits.hits) > 0:  # Check if results are not empty
+            response = self.generate_openai_summary(results)
+            if isinstance(response, Response):
+                return response  # Return the error response if summary generation failed
 
         # Serialize the results
         serializer = LiteratureSerializer(results, many=True)
