@@ -8,11 +8,15 @@ from django_elasticsearch_dsl_drf.filter_backends import (
     DefaultOrderingFilterBackend,
     SearchFilterBackend,
 )
+from django.db.models import Avg, Max, Min, Count
+from django.db import transaction
 from rest_framework.viewsets import ViewSet
 from elasticsearch.exceptions import ConnectionError, NotFoundError, RequestError
 import openai
 from openai import OpenAI
 import os
+import time
+from .models import OpenAIAPIMetrics, OpenAIAPIStatistics
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -87,7 +91,7 @@ class LiteratureSearchViewSet(ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-    def generate_openai_summary(self, results):
+    def generate_openai_summary(self, results, search_query):
         """
         Handles the OpenAI summary generation logic.
         """
@@ -99,21 +103,30 @@ class LiteratureSearchViewSet(ViewSet):
         if mock_openai:
             # Return mock data if the environment variable is set
             return self.mock_openai_summarize()
+    
 
         prompt = f"I give you the list of article titles with abstracts. Please make a concise summary as an overview of length no more than {openai_sum_count} words of the given information: "
         prompt += " ".join([f"Title: {result.title}, Abstract: {result.abstract}" for result in results])
+
+        # Start timer for metrics
+        start_time = time.time()
 
         try:
             summary = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
-            )
+            )      
 
-            
+            # Calculate response time in milliseconds
+            response_time_ms = (time.time() - start_time) * 1000  
+
+            # Log the metrics
+            OpenAIAPIMetrics.objects.create(query=search_query, response_time_ms=response_time_ms)
+            # Update and get aggregated metrics
+            aggregated_metrics = self.update_query_metrics(search_query)
 
             return summary
         
-
         except openai.APIError as e:
             #Handle API error here, e.g. retry or log
             print(f"OpenAI API returned an API Error: {e}")
@@ -140,7 +153,7 @@ class LiteratureSearchViewSet(ViewSet):
         # Generate OpenAI summary
         response = None
         if results and len(results.hits.hits) > 0:  # Check if results are not empty
-            response = self.generate_openai_summary(results)
+            response = self.generate_openai_summary(results, search_query)
             if isinstance(response, Response):
                 return response  # Return the error response if summary generation failed
 
@@ -161,3 +174,35 @@ class LiteratureSearchViewSet(ViewSet):
             },
             status=status.HTTP_200_OK
         )
+    
+    def update_query_metrics(self, query):
+        # Get or create metrics for the query
+        with transaction.atomic():
+            metrics = OpenAIAPIMetrics.objects.filter(query=query)
+
+            if metrics.exists():
+                # Calculate aggregates
+                count = metrics.count()
+                avg_response_time = metrics.aggregate(Avg('response_time_ms'))['response_time_ms__avg']
+                max_response_time = metrics.aggregate(Max('response_time_ms'))['response_time_ms__max']
+                min_response_time = metrics.aggregate(Min('response_time_ms'))['response_time_ms__min']
+
+                # Update or create statistics for the query
+                stats, created = OpenAIAPIStatistics.objects.update_or_create(
+                    query=query,
+                    defaults={
+                        'count': count,
+                        'average_response_time_ms': avg_response_time,
+                        'max_response_time_ms': max_response_time,
+                        'min_response_time_ms': min_response_time,
+                    }
+                )
+
+                # Return the aggregated metrics
+                return {
+                    'count': stats.count,
+                    'average_response_time_ms': stats.average_response_time_ms,
+                    'max_response_time_ms': stats.max_response_time_ms,
+                    'min_response_time_ms': stats.min_response_time_ms,
+                }
+        return None
